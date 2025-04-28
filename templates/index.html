@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Task Manager</title>
+    <!-- Подключаем стили и библиотеки -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <!-- Библиотеки для анимаций -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Левая боковая панель -->
+        <aside class="sidebar-left">
+            <h2>О приложении</h2>
+            <p>Управляйте своими задачами эффективно с помощью дедлайнов и напоминаний.</p>
+        </aside>
+        
+        <!-- Основной контент -->
+        <main class="content">
+            <div class="main-content" data-aos="fade-up">
+                <h1>Task Manager</h1>
+
+                <!-- Форма добавления задачи -->
+                <form action="/add" method="POST" class="task-form" data-aos="fade-up">
+                    <input type="text" name="title" placeholder="Добавьте новую задачу" required>
+                    <input type="text" name="description" placeholder="Описание задачи" required>
+                    <input type="text" name="date" placeholder="Дата дедлайна (дд.мм.гггг)" pattern="\d{2}\.\d{2}\.\d{4}">
+                    <input type="text" name="time" placeholder="Время дедлайна (чч:мм)" pattern="\d{2}:\d{2}">
+                    <button type="submit" class="add-btn">Добавить задачу</button>
+                </form>
+
+                <!-- Фильтры задач -->
+                <div class="filters" data-aos="fade-up">
+                    <a href="{{ url_for('index', filter='all') }}">Все</a>
+                    <a href="{{ url_for('index', filter='completed') }}">Выполненные</a>
+                    <a href="{{ url_for('index', filter='pending') }}">Невыполненные</a>
+                </div>
+
+                <!-- Список задач -->
+                <ul class="task-list">
+                    {% for task in tasks %}
+                    <li class="{% if task.completed %}completed{% endif %}" data-aos="fade-up">
+                        {% if task.completed %}
+                        <span class="checkmark">&#10003;</span>
+                        {% endif %}
+                        <span class="task-content">{{ task.title }}</span>
+                        <span class="task-content">{{ task.description }}</span>
+                        {% if task.deadline and not task.completed %}
+                        <span class="deadline">
+                            Дедлайн: {{ task.deadline.strftime('%d.%m.%Y %H:%M') }}
+                            <span class="timer" data-deadline="{{ task.deadline.isoformat() }}"></span>
+                        </span>
+                        {% endif %}
+                        <div class="actions">
+                            <a href="/complete/{{ task.id }}">{{ "Отменить" if task.completed else "Выполнить" }}</a>
+                            <a href="/update/{{ task.id }}">Редактировать</a>
+                            <a href="/delete/{{ task.id }}">Удалить</a>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </main>
+        
+    </div>
+
+    <!-- Подключаем скрипты -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js"></script>
+    <!-- GSAP для анимаций -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.2/gsap.min.js"></script>
+    <!-- Mo.js для эффектов -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mo-js/0.288.0/mo.min.js"></script>
+    <!-- Наш скрипт -->
+    <script src="{{ url_for('static', filename='timer.js') }}"></script>
+    <script>
+        // Инициализация AOS
+        AOS.init({
+            duration: 1000, // Продолжительность анимаций
+        });
+    </script>
+</body>
+</html>
