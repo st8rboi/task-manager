@@ -1,93 +1,133 @@
 # Импорт необходимых модулей
 from flask import Flask, render_template, request, Blueprint, redirect, url_for, abort
-from extensions import db  # Импорт объекта SQLAlchemy
-from models import Task  # Импорт модели задачи
+from extensions import db  # Импорт объекта SQLAlchemy для работы с БД
+from models import Task  # Модель задачи из БД
 from datetime import datetime  # Для работы с датой/временем
+from validators import validate_required_fields, validate_length
 
+# Создание Blueprint для группировки маршрутов, связанных с задачами
 tasks_bp = Blueprint('tasks', __name__)
 
-# Маршрут для добавления задач
+# Маршрут: Добавление задачи (POST-запрос)
 @tasks_bp.route('/add', methods=['POST'])
 def add_task():
     """
-    Обрабатывает добавление новой задачи
-    
-    Шаги:
-    1. Валидация обязательных полей
-    2. Проверка длины данных
-    3. Парсинг даты/времени
-    4. Сохранение в БД
-    
+    Обрабатывает добавление новой задачи через форму.
+
+    Параметры формы:
+    - title (обязательный): Название задачи (макс. 50 символов)
+    - description (обязательный): Описание задачи (макс. 200 символов)
+    - date (необязательный): Дата в формате DD.MM.YYYY
+    - time (необязательный): Время в формате HH:MM
+
     Возвращает:
-    Перенаправление на главную страницу или ошибку
+    - Перенаправление на главную страницу при успехе.
+    - Ошибку 400 при некорректных данных.
     """
-    try:
-        # Получение и очистка данных из формы
-        title = request.form.get('title', '').strip()  # Обязательное поле
-        description = request.form.get('description', '').strip()  # Обязательное поле
-    except KeyError:
-        abort(400, 'Обязательные поля: title, description')  # Если нет ключей формы
-    
-    # Проверка на пустые значения
-    if not title or not description:
-        abort(400, 'Поля не могут быть пустыми')
-    
-    # Проверка максимальной длины
-    if len(title) > 50 or len(description) > 200:
-        abort(400, "Превышена максимальная длина полей")
-    
-    # Обработка дедлайна
+    # Получение данных из формы с удалением пробелов по краям
+    form_data = {
+        'title': request.form.get('title', '').strip(),
+        'description': request.form.get('description', '').strip()       
+    }
+    validate_required_fields(form_data, ['title', 'description'])
+    validate_length(form_data, {'title': 50, 'description': 200})
+
+    # Парсинг даты и времени (необязательные поля)
     deadline = None
-    date_str = request.form.get('date')  # Необязательное поле
-    time_str = request.form.get('time')  # Необязательное поле
-    
+    date_str = request.form.get('date')
+    time_str = request.form.get('time')
+
     if date_str and time_str:
         try:
-            # Парсинг строки в datetime-объект
+            # Сборка строки даты-времени и преобразование в объект datetime
             deadline_str = f'{date_str} {time_str}'
             deadline = datetime.strptime(deadline_str, '%d.%m.%Y %H:%M')
         except ValueError:
-            abort(400, 'Некорректный формат даты/времени')
+            abort(400, 'Некорректный формат даты/времени')  # Ошибка парсинга
 
-    # Создание и сохранение задачи
+    # Создание объекта задачи и сохранение в БД
     new_task = Task(
-        title=title,
-        description=description,
+        title=form_data['title'],
+        description=form_data['description'],
         deadline=deadline,
-        completed=False  # Значение по умолчанию
+        completed=False
     )
     db.session.add(new_task)
     db.session.commit()
-    
-    return redirect(url_for('index'))  # Перенаправление на главную страницу
 
+    return redirect(url_for('index'))  # Перенаправление на главную
+
+# Маршрут: Удаление задачи (GET-запрос)
 @tasks_bp.route('/delete/<int:id>')
 def delete_task(id):
-    task = Task.query.get_or_404(id)
+    """
+    Удаляет задачу по ID.
+
+    Параметры URL:
+    - id (int): Уникальный идентификатор задачи.
+
+    Возвращает:
+    - Перенаправление на главную страницу.
+    - Ошибку 404, если задача не найдена.
+    """
+    task = Task.query.get_or_404(id)  # Поиск задачи или 404
     db.session.delete(task)
     db.session.commit()
     return redirect(url_for('index'))
 
+# Маршрут: Переключение статуса задачи (GET-запрос)
 @tasks_bp.route('/complete/<int:id>')
 def complete_task(id):
+    """
+    Меняет статус выполнения задачи на противоположный.
+
+    Параметры URL:
+    - id (int): Уникальный идентификатор задачи.
+
+    Возвращает:
+    - Перенаправление на главную страницу.
+    - Ошибку 404, если задача не найдена.
+    """
     task = Task.query.get_or_404(id)
-    task.completed = not task.completed
+    task.completed = not task.completed  # Инверсия статуса
     db.session.commit()
     return redirect(url_for('index'))
 
+# Маршрут: Редактирование задачи (GET и POST)
 @tasks_bp.route('/update/<int:id>', methods=['GET', 'POST'])
 def update_task(id):
+    """
+    Редактирует существующую задачу.
+
+    Параметры URL:
+    - id (int): Уникальный идентификатор задачи.
+
+    GET: Отображает форму редактирования.
+    POST: Обновляет данные задачи.
+
+    Возвращает:
+    - HTML-форму при GET.
+    - Перенаправление на главную при POST.
+    - Ошибку 404, если задача не найдена.
+    """
     task = Task.query.get_or_404(id)
+
     if request.method == 'POST':
+        # Обновление данных из формы
         task.title = request.form['title']
         task.description = request.form['description']
+        
+        # Обновление дедлайна
         date_str = request.form.get('date')
         time_str = request.form.get('time')
         if date_str and time_str:
             deadline_str = f"{date_str} {time_str}"
             task.deadline = datetime.strptime(deadline_str, '%d.%m.%Y %H:%M')
         else:
-            task.deadline = None
+            task.deadline = None  # Сброс дедлайна
+
         db.session.commit()
         return redirect(url_for('index'))
+
+    # Отображение формы редактирования с текущими данными задачи
     return render_template('update.html', task=task)
