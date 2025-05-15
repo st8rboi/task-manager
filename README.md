@@ -11,21 +11,21 @@ Task Manager — это веб-приложение для управления 
 - Поддержка Docker
 
 ## 📸 Примеры интерфейса
-
+Страница регистрации
 <p align="center">
-  <img src="./img/register.png" alt="Пример 1" width="600"/>
+  <img src="./img/register.png" alt="Register" width="600"/>
 </p>
-
+Страница входа в профиль
 <p align="center">
-  <img src="./img/login.png" alt="Пример 2" width="600"/>
+  <img src="./img/login.png" alt="Login" width="600"/>
 </p>
-
+Главная страница
 <p align="center">
-  <img src="./img/main.png" alt="Пример 2" width="600"/>
+  <img src="./img/main.png" alt="Main" width="600"/>
 </p>
-
+СТраница редактирования задачи
 <p align="center">
-  <img src="./img/change.png" alt="Пример 2" width="600"/>
+  <img src="./img/change.png" alt="Change" width="600"/>
 </p>
 
 ## ⚙️ Стек технологий
