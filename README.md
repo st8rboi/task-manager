@@ -17,7 +17,15 @@ Task Manager — это веб-приложение для управления 
 </p>
 
 <p align="center">
-  <img src="./img.login.png" alt="Пример 2" width="600"/>
+  <img src="./img/login.png" alt="Пример 2" width="600"/>
+</p>
+
+<p align="center">
+  <img src="./img/main.png" alt="Пример 2" width="600"/>
+</p>
+
+<p align="center">
+  <img src="./img/change.png" alt="Пример 2" width="600"/>
 </p>
 
 ## ⚙️ Стек технологий
